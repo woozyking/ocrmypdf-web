@@ -10,6 +10,27 @@ import ocrmypdf
 app = Flask(__name__)
 
 
+@app.route('/', methods=['GET'])
+def index():
+    return '''
+        <!doctype html>
+        <html>
+            <body>
+                <form action='/ocrmypdf' method='post' enctype='multipart/form-data'>
+                <input type='file' name='file' accept='.pdf' required>
+                <p>Select OCR options:</p>
+                <input type='radio' name='ocr_options' value='default' checked>Default<br>
+                <input type='radio' name='ocr_options' value='skip_text'>Skip Text<br>
+                <input type='radio' name='ocr_options' value='force_ocr'>Force OCR<br>
+                <input type='radio' name='ocr_options' value='redo_ocr'>Redo OCR<br>
+                <br>
+                <input type='submit' value='OCR PDF'>
+                </form>
+            </body>
+        </html>
+    '''
+
+
 @app.route("/ocrmypdf", methods=["POST"])
 def ocrmypdf_api():
     if "file" not in request.files:
