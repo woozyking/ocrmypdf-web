@@ -11,6 +11,8 @@ This project is inspired by [sseemayer/OCRmyPDF-web](https://github.com/sseemaye
 
 Otherwise, it's conceptually the same and I encourage you to pick what suits you.
 
+This project is also assisted through ChatGPT (based on the GPT-3.5 model at the time). The full interaction log can be found in [ChatGPT.md](ChatGPT.md). Not everything was helpful but this makes experimenting and iterating on small side projects much more enjoyable than they already were.
+
 ## Requirements
 
 * Docker (with `docker-compose`)
