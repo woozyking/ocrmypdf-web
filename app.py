@@ -25,6 +25,7 @@ def index():
                 <input type='radio' name='ocr_options' value='redo_ocr'>Redo OCR<br>
                 <br>
                 <input type='submit' value='OCR PDF'>
+                <button type='reset'>Reset</button>
                 </form>
             </body>
         </html>
