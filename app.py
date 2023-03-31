@@ -10,9 +10,9 @@ import ocrmypdf
 app = Flask(__name__)
 
 
-@app.route('/', methods=['GET'])
+@app.route("/", methods=["GET"])
 def index():
-    return '''
+    return """
         <!doctype html>
         <html>
             <body>
@@ -29,7 +29,7 @@ def index():
                 </form>
             </body>
         </html>
-    '''
+    """
 
 
 @app.route("/ocrmypdf", methods=["POST"])
@@ -84,4 +84,4 @@ def ocrmypdf_api():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host="0.0.0.0", port=8080)
