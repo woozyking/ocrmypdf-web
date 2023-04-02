@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 ocrmypdf = "*"
 flask = "*"
+Pillow = "*"
+pytesseract = "*"
+PyPDF2 = "*"
 
 [dev-packages]
 black = "*"
