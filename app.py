@@ -1,14 +1,10 @@
 from datetime import datetime
 import os
-from tempfile import NamedTemporaryFile
-
+from io import BytesIO
 from flask import Flask, request, send_file
 import ocrmypdf
-from PIL import Image
-import tempfile
 
 app = Flask(__name__)
-
 
 @app.route("/", methods=["GET"])
 def index():
@@ -48,25 +44,22 @@ def ocrmypdf_api():
         return "Invalid file type, please upload a PDF or image file", 400
 
     if file_extension in {".jpg", ".jpeg", ".png"}:
-    # convert the image to PDF
-        with Image.open(uploaded_file) as img:
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
-                img.convert("RGB").save(temp_file, "PDF")
-            pdf_file = open(temp_file.name, 'rb').read()
+        # convert the image to PDF using ocrmypdf's native image handling
+        with BytesIO(uploaded_file.read()) as image_buffer, BytesIO() as pdf_buffer:
+            ocrmypdf.ocr(image_buffer, pdf_buffer, image_dpi=300)
+            pdf_buffer.seek(0)
+            pdf_file = pdf_buffer.read()
     else:
-        pdf_file = uploaded_file.read() 
+        pdf_file = uploaded_file.read()
 
     ocr_options = request.form.get("ocr_options")
 
     # Read the PDF file and perform OCR on it
-    with NamedTemporaryFile(suffix=".pdf") as pdf_output_file, NamedTemporaryFile(suffix=".pdf") as output_file:
-        pdf_output_file.write(pdf_file)
-        pdf_output_file.seek(0)
-
+    with BytesIO(pdf_file) as pdf_output_file, BytesIO() as output_file:
         try:
             ocrmypdf.ocr(
-                pdf_output_file.name,
-                output_file.name,
+                pdf_output_file,
+                output_file,
                 force_ocr=(ocr_options == "force_ocr"),
                 skip_text=(ocr_options == "skip_text"),
                 redo_ocr=(ocr_options == "redo_ocr"),
@@ -88,10 +81,11 @@ def ocrmypdf_api():
 
         # Send the resulting file back to the user
         return send_file(
-            output_file.name,
+            BytesIO(output_file.getvalue()),
             as_attachment=True,
             download_name=download_name,
         )
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
