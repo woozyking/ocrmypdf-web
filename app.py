@@ -1,14 +1,10 @@
 from datetime import datetime
-from io import BytesIO
 import os
-from tempfile import NamedTemporaryFile
-
+from io import BytesIO
 from flask import Flask, request, send_file
 import ocrmypdf
 
-
 app = Flask(__name__)
-
 
 @app.route("/", methods=["GET"])
 def index():
@@ -31,7 +27,6 @@ def index():
         </html>
     """
 
-
 @app.route("/ocrmypdf", methods=["POST"])
 def ocrmypdf_api():
     if "file" not in request.files:
@@ -42,20 +37,29 @@ def ocrmypdf_api():
     if uploaded_file.filename == "":
         return "No file selected", 400
 
-    if uploaded_file.mimetype != "application/pdf":
-        return "Invalid file type, please upload a PDF file", 400
+    allowed_extensions = {".pdf", ".jpg", ".jpeg", ".png"}
+    file_extension = os.path.splitext(uploaded_file.filename)[1]
 
-    filename_parts = os.path.splitext(uploaded_file.filename)
+    if file_extension not in allowed_extensions:
+        return "Invalid file type, please upload a PDF or image file", 400
+
+    if file_extension in {".jpg", ".jpeg", ".png"}:
+        # convert the image to PDF using ocrmypdf's native image handling
+        with BytesIO(uploaded_file.read()) as image_buffer, BytesIO() as pdf_buffer:
+            ocrmypdf.ocr(image_buffer, pdf_buffer, image_dpi=300)
+            pdf_buffer.seek(0)
+            pdf_file = pdf_buffer.read()
+    else:
+        pdf_file = uploaded_file.read()
+
     ocr_options = request.form.get("ocr_options")
 
     # Read the PDF file and perform OCR on it
-    with NamedTemporaryFile(suffix=filename_parts[1]) as output_file, BytesIO(
-        uploaded_file.read()
-    ) as input_buffer:
+    with BytesIO(pdf_file) as pdf_output_file, BytesIO() as output_file:
         try:
             ocrmypdf.ocr(
-                input_buffer,
-                output_file.name,
+                pdf_output_file,
+                output_file,
                 force_ocr=(ocr_options == "force_ocr"),
                 skip_text=(ocr_options == "skip_text"),
                 redo_ocr=(ocr_options == "redo_ocr"),
@@ -73,11 +77,11 @@ def ocrmypdf_api():
 
         # Set the name of the resulting OCR'ed file
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        download_name = f"{filename_parts[0]}_{timestamp}_OCR{filename_parts[1]}"
+        download_name = f"{os.path.splitext(uploaded_file.filename)[0]}_{timestamp}_OCR.pdf"
 
         # Send the resulting file back to the user
         return send_file(
-            output_file.name,
+            BytesIO(output_file.getvalue()),
             as_attachment=True,
             download_name=download_name,
         )
